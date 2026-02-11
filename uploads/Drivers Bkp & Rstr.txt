@@ -1,0 +1,5 @@
+Backup
+DISM /online /export-driver /destination:D:\DriverBackup
+
+Restore
+DISM /online /Add-Driver /Driver:D:\DriverBackup /Recurse

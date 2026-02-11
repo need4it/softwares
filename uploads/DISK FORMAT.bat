@@ -1,0 +1,5 @@
+diskpart
+
+select disk
+
+clean
