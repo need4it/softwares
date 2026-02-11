@@ -3,98 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Software Drive</title>
+    <title>My Software Download Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white p-8">
-    <div class="max-w-2xl mx-auto bg-gray-800 p-6 rounded-xl shadow-2xl">
-        <h1 class="text-2xl font-bold mb-6 border-b border-gray-700 pb-2">Software Distribution</h1>
-        
-        <div class="mb-10">
-            <h2 class="text-sm uppercase text-gray-400 font-semibold mb-3">Upload New Software</h2>
-            <div class="flex items-center gap-4">
-                <input type="file" id="fileInput" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-                <button onclick="uploadFile()" id="uploadBtn" class="bg-green-600 px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition">Upload</button>
-            </div>
-            <p id="status" class="mt-2 text-sm text-yellow-500"></p>
-        </div>
+<body class="bg-gray-100 font-sans">
 
-        <div>
-            <h2 class="text-sm uppercase text-gray-400 font-semibold mb-3">Available Downloads</h2>
-            <div id="fileList" class="space-y-3">
-                <p class="text-gray-500 italic">Scanning repository...</p>
-            </div>
+    <div class="max-w-4xl mx-auto py-12 px-4">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-blue-600">Software Archive</h1>
+            <p class="text-gray-600 mt-2">Direct links to all hosted tools and applications.</p>
+        </header>
+
+        <div id="file-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <p class="text-center col-span-2 text-gray-400">Loading files...</p>
         </div>
     </div>
 
     <script>
-        // CONFIGURATION
-        const OWNER = 'need4it';
-        const REPO = 'softwares';
-        const FOLDER = 'uploads'; // Folder where files will go
-        const TOKEN = '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; // Warning: See security note below
+        // --- CONFIGURATION ---
+        const USERNAME = 'need4it'; // Change this
+        const REPO = 'softwares';           // Change this
+        const FOLDER = 'uploads';               // The folder you created
+        // ---------------------
 
-        // FETCH FILES ON LOAD
-        async function loadFiles() {
-            const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`);
-            const data = await response.json();
-            const list = document.getElementById('fileList');
-            list.innerHTML = '';
+        async function getFiles() {
+            const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FOLDER}`;
+            const container = document.getElementById('file-container');
 
-            if (data.length === 0) { list.innerHTML = 'No files found.'; return; }
+            try {
+                const response = await fetch(url);
+                const files = await response.json();
 
-            data.forEach(file => {
-                if(file.type === 'file') {
-                    list.innerHTML += `
-                        <div class="flex justify-between items-center bg-gray-700 p-3 rounded-lg">
-                            <span class="font-mono text-sm">${file.name}</span>
-                            <a href="${file.download_url}" class="text-blue-400 hover:underline font-bold text-sm">Download</a>
-                        </div>`;
+                if (files.length === 0) {
+                    container.innerHTML = "<p>No files found in the software folder.</p>";
+                    return;
                 }
-            });
-        }
 
-        // UPLOAD FILE
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const status = document.getElementById('status');
-            if (!fileInput.files.length) return alert("Select a file!");
+                container.innerHTML = ''; // Clear loading text
 
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            status.innerText = "Encoding & Uploading...";
-
-            reader.onload = async () => {
-                const content = reader.result.split(',')[1]; // Base64 content
-                const fileName = file.name;
-                
-                const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}/${fileName}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Upload ${fileName}`,
-                        content: content
-                    })
+                files.forEach(file => {
+                    if (file.type === 'file') {
+                        const card = `
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center hover:shadow-md transition">
+                                <div>
+                                    <h3 class="font-bold text-gray-800">${file.name}</h3>
+                                    <p class="text-xs text-gray-400">${(file.size / 1024).toFixed(1)} KB</p>
+                                </div>
+                                <a href="${file.download_url}" 
+                                   class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold transition">
+                                   Download
+                                </a>
+                            </div>`;
+                        container.innerHTML += card;
+                    }
                 });
-
-                if (response.ok) {
-                    status.innerText = "Upload Successful!";
-                    loadFiles();
-                } else {
-                    status.innerText = "Error: Check token/permissions.";
-                }
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                container.innerHTML = "<p class='text-red-500'>Error loading files. Check your username/repo name.</p>";
+            }
         }
 
-        loadFiles();
+        getFiles();
     </script>
 </body>
-
 </html>
-
-
